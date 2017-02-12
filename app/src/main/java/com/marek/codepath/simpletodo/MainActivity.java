@@ -1,5 +1,6 @@
 package com.marek.codepath.simpletodo;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -7,6 +8,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import org.apache.commons.io.FileUtils;
 
@@ -20,6 +22,11 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<String> items;
     ArrayAdapter<String> itemsAdapter;
     ListView lvItems;
+
+    private static final int REQUEST_CODE_SAVE = 1;
+
+    public static final String EXTRA_ITEM_IDX = "itemIdx";
+    public static final String EXTRA_ITEM_VALUE = "itemValue";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,5 +79,36 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
+
+        lvItems.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapter, View item, int pos, long id) {
+                Intent edit = new Intent(MainActivity.this, EditItemActivity.class);
+                edit.putExtra(EXTRA_ITEM_IDX, pos);
+                edit.putExtra(EXTRA_ITEM_VALUE, items.get(pos));
+                startActivityForResult(edit, REQUEST_CODE_SAVE);
+            }
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(requestCode != REQUEST_CODE_SAVE) {
+            // log?
+            return;
+        }
+
+        if(resultCode == RESULT_OK) {
+            int idx = data.getIntExtra(EXTRA_ITEM_IDX, -1);
+            if(idx < 0) {
+                // log?
+                return;
+            }
+            items.remove(idx);
+            items.add(idx, data.getStringExtra(EXTRA_ITEM_VALUE));
+            itemsAdapter.notifyDataSetChanged();
+            writeItems();
+            Toast.makeText(MainActivity.this, "Item updated", Toast.LENGTH_LONG).show();
+        }
     }
 }
