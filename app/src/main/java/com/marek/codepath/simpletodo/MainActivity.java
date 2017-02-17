@@ -10,17 +10,22 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.marek.codepath.simpletodo.db.TodoItem;
+import com.raizlabs.android.dbflow.sql.language.SQLite;
+
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
+import static android.media.CamcorderProfile.get;
 import static com.marek.codepath.simpletodo.R.id.etNewItem;
 
 public class MainActivity extends AppCompatActivity {
-    ArrayList<String> items;
-    ArrayAdapter<String> itemsAdapter;
+    List<TodoItem> items;
+    TodoItemAdapter itemsAdapter;
     ListView lvItems;
 
     private static final int REQUEST_CODE_SAVE = 1;
@@ -36,36 +41,30 @@ public class MainActivity extends AppCompatActivity {
         lvItems = (ListView)findViewById(R.id.lvItems);
 
         readItems();
-        itemsAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, items);
+        itemsAdapter = new TodoItemAdapter(this, items);
         lvItems.setAdapter(itemsAdapter);
 
         setupListViewListener();
     }
 
     private void readItems() {
-        File todoFile = new File(getFilesDir(), "todo.txt");
-        try {
-            items = new ArrayList<>(FileUtils.readLines(todoFile));
-        } catch(IOException ioe) {
-            items = new ArrayList<>();
-            ioe.printStackTrace();
-        }
+        items = SQLite.select().from(TodoItem.class).queryList();
     }
 
     private void writeItems() {
-        File todoFile = new File(getFilesDir(), "todo.txt");
-        try {
-            FileUtils.writeLines(todoFile, items);
-        } catch(IOException ioe) {
-            ioe.printStackTrace();
-        }
+        // todo -- not necessary anymore?
     }
 
     public void onAddItem(View v) {
         EditText etNewItem = (EditText)findViewById(R.id.etNewItem);
         String newItem = etNewItem.getText().toString();
-        itemsAdapter.add(newItem);
-        writeItems();
+
+        TodoItem todo = new TodoItem();
+        todo.setDescription(newItem);
+        todo.save();
+
+        itemsAdapter.add(todo);
+
         etNewItem.setText("");
     }
 
@@ -73,9 +72,10 @@ public class MainActivity extends AppCompatActivity {
         lvItems.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> adapter, View item, int pos, long id) {
+                TodoItem todoItem = items.get(pos);
+                todoItem.delete();
                 items.remove(pos);
                 itemsAdapter.notifyDataSetChanged();
-                writeItems();
                 return true;
             }
         });
@@ -85,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> adapter, View item, int pos, long id) {
                 Intent edit = new Intent(MainActivity.this, EditItemActivity.class);
                 edit.putExtra(EXTRA_ITEM_IDX, pos);
-                edit.putExtra(EXTRA_ITEM_VALUE, items.get(pos));
+                edit.putExtra(EXTRA_ITEM_VALUE, items.get(pos).getDescription());
                 startActivityForResult(edit, REQUEST_CODE_SAVE);
             }
         });
@@ -104,10 +104,11 @@ public class MainActivity extends AppCompatActivity {
                 // log?
                 return;
             }
-            items.remove(idx);
-            items.add(idx, data.getStringExtra(EXTRA_ITEM_VALUE));
+            TodoItem todoItem = items.get(idx);
+            todoItem.setDescription(data.getStringExtra(EXTRA_ITEM_VALUE));
+            todoItem.save();
+
             itemsAdapter.notifyDataSetChanged();
-            writeItems();
             Toast.makeText(MainActivity.this, "Item updated", Toast.LENGTH_LONG).show();
         }
     }

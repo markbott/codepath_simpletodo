@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">SimpleTodo</string>
+    <string name="app_name">TodoMinder</string>
     <string name="txtEditItemBelow">Edit Item Below</string>
     <string name="btnSave">Save</string>
     <string name="lblItemValue">Name</string>
