@@ -37,7 +37,7 @@ GIF created with [LiceCap](http://www.cockos.com/licecap/).
 
 ## Notes
 
-Describe any challenges encountered while building the app.
+Describe any challenges encountered while building the app: the main challenge was getting the environment set up in VMware Workstation, esp. the emulator which requires special settings for passing virtualization settings through to the guest OS.
 
 ## License
 
